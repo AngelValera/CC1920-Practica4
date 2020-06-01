@@ -12,6 +12,7 @@ from pyspark.ml.evaluation import MulticlassClassificationEvaluator
 from pyspark.ml.evaluation import BinaryClassificationEvaluator
 from pyspark.ml import Pipeline
 from pyspark.ml.classification import RandomForestClassifier
+from pyspark.ml.classification import DecisionTreeClassifier
 
 # Función para conectar con el cluster de Spark
 #-------------------------------------------------------------------------------
@@ -67,12 +68,13 @@ def prepocesamiento(dataFrame):
     dataFrame = assembler.transform(dataFrame)
     dataFrame = dataFrame.selectExpr('features as features', 'class as label')
     dataFrame = dataFrame.select('features', 'label')
+    
     # Balanceamos de los datos utilizando Undersampling    
-    No = dataFrame.filter('label=0')
-    Si = dataFrame.filter('label=1')
-    sampleRatio = float(Si.count()) / float(dataFrame.count())
-    seleccion = No.sample(False, sampleRatio)
-    dataFrame = Si.unionAll(seleccion)
+    df_No = dataFrame.filter('label=0')
+    df_Si = dataFrame.filter('label=1')
+    sampleRatio = float(df_Si.count()) / float(dataFrame.count())
+    seleccion = df_No.sample(False, sampleRatio)
+    dataFrame = df_Si.unionAll(seleccion)
     return dataFrame
 
 # Función para clasificar usando RandomForest 
@@ -117,7 +119,46 @@ def clasificador_RandomForest(dataFrame,numArboles):
     evaluation = evaluator.evaluate(model.transform(testData))
     print('AUC:', evaluation)
     
-    
+# Función para clasificar usando DecisionTree
+#-------------------------------------------------------------------------------
+def clasificador_DecisionTree(dataFrame):
+    # Ajustamos todo el conjunto de datos para incluir todas las etiquetas en el índice.
+    labelIndexer = StringIndexer(
+        inputCol='label', outputCol='indexedLabel').fit(dataFrame)
+    # Se identifican automáticamente las características categóricas e indexelas.
+    # Establecemos el maxCategories para que las características con> 4 valores distintos se traten como continuas.
+    featureIndexer =\
+        VectorIndexer(inputCol='features',
+                      outputCol='indexedFeatures', maxCategories=4).fit(dataFrame)
+    # Dividimos los datos en conjuntos de entrenamiento y prueba (30% retenido para la prueba)
+    (trainingData, testData) = dataFrame.randomSplit([0.7, 0.3])
+    # Entrena un modelo DecisionTree.
+    dt = DecisionTreeClassifier(
+        labelCol='indexedLabel', featuresCol='indexedFeatures')    
+    pipeline = Pipeline(
+        stages=[labelIndexer, featureIndexer, dt])
+    # Modelo de entrenamiento
+    model = pipeline.fit(trainingData)
+    # Hacer predicciones
+    predictions = model.transform(testData)
+    # Seleccione filas de ejemplo para mostrar.
+    predictions.select('predictedLabel', 'label', 'features').show(5)
+    # Seleccionamos (prediction, true label) y calculamos el test error
+    evaluator = MulticlassClassificationEvaluator(
+        labelCol='indexedLabel', predictionCol='prediction', metricName='accuracy')
+    accuracy = evaluator.evaluate(predictions)
+    print('Test Error = %g' % (1.0 - accuracy))
+    print('Accuracy = ', accuracy)
+
+    rfModel = model.stages[2]
+    print(rfModel)  # summary only
+
+    #Calcular AUC
+    evaluator = BinaryClassificationEvaluator()
+    evaluation = evaluator.evaluate(model.transform(testData))
+    print('AUC:', evaluation)
+
+
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
@@ -137,10 +178,15 @@ if __name__ == '__main__':
         df = generarNuevoDF(df)
     # Realizamos un prepocesamiento a los datos y los balanceamos con undersampling
     df = prepocesamiento(df)    
-    # Realizamos una clasificación usando RandomForest     
+    
+    # Realizamos una clasificación usando RandomForest         
     clasificador_RandomForest(df, 10)
     #clasificador_RandomForest(df, 75)
     #clasificador_RandomForest(df, 150)
+    
+    # Realizamos una clasificación usando DecisionTree
+    clasificador_DecisionTree(df)
+
 
 
     sc.stop()
