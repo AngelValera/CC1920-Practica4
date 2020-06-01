@@ -214,12 +214,12 @@ if __name__ == '__main__':
     df = prepocesamiento(df, undersampling)
     
     # Realizamos una clasificación usando RandomForest         
-    #clasificador_RandomForest(df, 10)
-    #clasificador_RandomForest(df, 75)
-    #clasificador_RandomForest(df, 150)
+    clasificador_RandomForest(df, 10)
+    clasificador_RandomForest(df, 75)
+    clasificador_RandomForest(df, 150)
     
     # Realizamos una clasificación usando DecisionTree
-    #clasificador_DecisionTree(df)
+    clasificador_DecisionTree(df)
 
     # Realizamos una clasificación usando un perceptron multicapa
     # Una capa de entrada de 6 (features),
@@ -237,7 +237,5 @@ if __name__ == '__main__':
     clasificador_PerceptronMulticapa(df, capas, 100, 128)
     clasificador_PerceptronMulticapa(df, capas, 50, 64)
     clasificador_PerceptronMulticapa(df, capas, 25, 32)
-
-
 
     sc.stop()
