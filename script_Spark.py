@@ -14,7 +14,7 @@ from pyspark.ml import Pipeline
 from pyspark.ml.classification import RandomForestClassifier
 from pyspark.ml.classification import DecisionTreeClassifier
 from pyspark.ml.classification import MultilayerPerceptronClassifier
-from pyspark.ml.feature import MinMaxScaler
+
 
 # Función para conectar con el cluster de Spark
 #-------------------------------------------------------------------------------
@@ -63,7 +63,7 @@ def generarNuevoDF(dataFrame):
     
 # Función para realizar el prepocesamiento de los datos
 #-------------------------------------------------------------------------------
-def prepocesamiento(dataFrame):    
+def prepocesamiento(dataFrame, undersampling):
     # Converstimos el conjunto de datos a un formato legible
     assembler = VectorAssembler(inputCols=['PSSM_r2_-1_M', 'PSSM_r1_3_K', 'AA_freq_global_D',
                                            'PSSM_central_0_V', 'AA_freq_central_D', 'PSSM_r1_-1_A'], outputCol='features')
@@ -72,17 +72,12 @@ def prepocesamiento(dataFrame):
     dataFrame = dataFrame.select('features', 'label')    
     
     # Balanceamos de los datos utilizando Undersampling    
-    df_No = dataFrame.filter('label=0')
-    df_Si = dataFrame.filter('label=1')
-    sampleRatio = float(df_Si.count()) / float(dataFrame.count())
-    seleccion = df_No.sample(False, sampleRatio)
-    dataFrame = df_Si.unionAll(seleccion)
-
-    # Escalamos los datos al rango [0,1]
-    scaler = MinMaxScaler(inputCol="features", outputCol="scaledFeatures")
-    scaler_model = scaler.fit(dataFrame)
-    dataFrame = scaler_model.transform(dataFrame)
-    return dataFrame
+    if undersampling:
+        df_No = dataFrame.filter('label=0')
+        df_Si = dataFrame.filter('label=1')
+        sampleRatio = float(df_Si.count()) / float(dataFrame.count())
+        seleccion = df_No.sample(False, sampleRatio)
+        dataFrame = df_Si.unionAll(seleccion)
 
 # Función para clasificar usando RandomForest 
 #-------------------------------------------------------------------------------
@@ -194,8 +189,8 @@ def clasificador_PerceptronMulticapa(dataFrame, capas, NumIter, TamLote):
     evaluator = BinaryClassificationEvaluator(rawPredictionCol='prediction')
     evaluation = evaluator.evaluate(model.transform(testData))
     print('AUC:', evaluation)
-    
-
+    print('Perceptron Multicapa: maxIter:' + NumIter +
+          ' Layers: '+layers+' blockSize: '+TamLote)
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
@@ -214,7 +209,8 @@ if __name__ == '__main__':
         # Obtenemos un nuevo conjunto de datos con las columnas designadas
         df = generarNuevoDF(df)
     # Realizamos un prepocesamiento a los datos y los balanceamos con undersampling
-    df = prepocesamiento(df)    
+    undersampling = True;
+    df = prepocesamiento(df, undersampling)
     
     # Realizamos una clasificación usando RandomForest         
     #clasificador_RandomForest(df, 10)
@@ -229,15 +225,15 @@ if __name__ == '__main__':
     # Una capa intermedia de 12
     # y una capa de salida de 2 (classes)
     clasificador_PerceptronMulticapa(df, [6, 12, 2], 100, 128)
-    #clasificador_PerceptronMulticapa(df, [6, 12, 2], 50, 64)
-    #clasificador_PerceptronMulticapa(df, [6, 12, 2], 25, 32)
+    clasificador_PerceptronMulticapa(df, [6, 12, 2], 50, 64)
+    clasificador_PerceptronMulticapa(df, [6, 12, 2], 25, 32)
     
     # Una capa de entrada de 6 (features),
     # Una capa intermedia de 48
     # y una capa de salida de 2 (classes)
-    #clasificador_PerceptronMulticapa(df, [6, 48, 2], 100, 128)
-    #clasificador_PerceptronMulticapa(df, [6, 48, 2], 50, 64)
-    #clasificador_PerceptronMulticapa(df, [6, 48, 2], 25, 32)
+    clasificador_PerceptronMulticapa(df, [6, 48, 2], 100, 128)
+    clasificador_PerceptronMulticapa(df, [6, 48, 2], 50, 64)
+    clasificador_PerceptronMulticapa(df, [6, 48, 2], 25, 32)
 
 
 
