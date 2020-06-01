@@ -70,8 +70,7 @@ def prepocesamiento(dataFrame):
     sampleRatio = float(Si.count()) / float(dataFrame.count())
     seleccion = No.sample(False, sampleRatio)
     dataFrame = Si.unionAll(seleccion)
-    dataFrame.write.csv(
-        '/user/ccsa14274858/filteredC.small.training_Procesado', header=True, mode="overwrite")
+    return dataFrame
 
 # Función para clasificar usando RandomForest 
 #-------------------------------------------------------------------------------
