@@ -123,19 +123,19 @@ def clasificador_RandomForest(dataFrame,numArboles):
 def clasificador_DecisionTree(dataFrame):
     # Ajustamos todo el conjunto de datos para incluir todas las etiquetas en el índice.
     labelIndexer = StringIndexer(
-        inputCol='label', outputCol='indexedLabel').fit(dataFrame)
+        inputCol='label', outputCol='indexedLabel').fit(dataFrame)    
     # Se identifican automáticamente las características categóricas e indexelas.
     # Establecemos el maxCategories para que las características con> 4 valores distintos se traten como continuas.
     featureIndexer =\
         VectorIndexer(inputCol='features',
-                      outputCol='indexedFeatures', maxCategories=4).fit(dataFrame)
+                      outputCol='indexedFeatures', maxCategories=2).fit(dataFrame)
     # Dividimos los datos en conjuntos de entrenamiento y prueba (30% retenido para la prueba)
     (trainingData, testData) = dataFrame.randomSplit([0.7, 0.3])
     # Entrena un modelo DecisionTree.
     dt = DecisionTreeClassifier(
         labelCol='indexedLabel', featuresCol='indexedFeatures')    
-    pipeline = Pipeline(
-        stages=[labelIndexer, featureIndexer, dt])
+    
+    pipeline = Pipeline(stages=[labelIndexer, featureIndexer, dt])
     # Modelo de entrenamiento
     model = pipeline.fit(trainingData)
     # Hacer predicciones
@@ -146,11 +146,12 @@ def clasificador_DecisionTree(dataFrame):
     evaluator = MulticlassClassificationEvaluator(
         labelCol='indexedLabel', predictionCol='prediction', metricName='accuracy')
     accuracy = evaluator.evaluate(predictions)
-    print('Test Error = %g' % (1.0 - accuracy))
+    print('Test Error = %g ' % (1.0 - accuracy))
     print('Accuracy = ', accuracy)
 
     treeModel = model.stages[2]
-    print(treeModel)  # summary only
+    # summary only
+    print(treeModel)
 
     #Calcular AUC
     evaluator = BinaryClassificationEvaluator()
