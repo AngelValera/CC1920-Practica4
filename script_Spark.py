@@ -169,8 +169,16 @@ def clasificador_DecisionTree(dataFrame):
 # Función para clasificar usando NaiveBayes
 #-------------------------------------------------------------------------------
 def clasificador_NaiveBayes(dataFrame,tipoModelo):
+    # Ajustamos todo el conjunto de datos para incluir todas las etiquetas en el índice.
+    labelIndexer = StringIndexer(
+        inputCol='label', outputCol='indexedLabel').fit(dataFrame)
+    # Se identifican automáticamente las características categóricas e indexelas.
+    # Establecemos el maxCategories para que las características con> 4 valores distintos se traten como continuas.
+    featureIndexer =\
+        VectorIndexer(inputCol='features',
+                      outputCol='indexedFeatures', maxCategories=2).fit(dataFrame)
     # Desglosamos los datos en entrenamiento y test
-    splits = dataFrame.randomSplit([0.6, 0.4], 1234)
+    splits = dataFrame.randomSplit([0.7, 0.3], 1234)
     trainData = splits[0]
     testdata = splits[1]
     # create the trainer and set its parameters
@@ -179,9 +187,10 @@ def clasificador_NaiveBayes(dataFrame,tipoModelo):
     model = nb.fit(trainData)
     # select example rows to display.
     predictions = model.transform(testdata)
-    predictions.show()
+    # Seleccione filas de ejemplo para mostrar.
+    predictions.select('prediction', 'indexedLabel', 'features').show(5)
     # compute accuracy on the test set
-    evaluator = MulticlassClassificationEvaluator(labelCol="label", predictionCol="prediction",
+    evaluator = MulticlassClassificationEvaluator(labelCol="indexedFeatures", predictionCol="prediction",
                                                 metricName="accuracy")
     accuracy = evaluator.evaluate(predictions)
     print('Test Error = %g ' % (1.0 - accuracy))
