@@ -17,7 +17,8 @@ from pyspark.ml.classification import RandomForestClassifier
 def iniciar_Spark():
     """ Inicializa el Spark Context """
     conf = SparkConf().setAppName("Practica 4 - Angel Valera Motos")
-    sc = SparkContext(conf=conf)    
+    sc = SparkContext(conf=conf) 
+    sc.setLogLevel('WARN')
     return sc
 
 # Función para cargar el fichero de datos y asignarle la cabecera
