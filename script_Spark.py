@@ -4,6 +4,7 @@
 ###################################################################################################
 import sys
 from pyspark import SparkContext, SparkConf, SQLContext
+import os.path
 
 # Función para conectar con el cluster de Spark
 #-------------------------------------------------------------------------------
@@ -48,12 +49,33 @@ def generarNuevoDF(dataFrame):
     new_DF.write.csv(
         '/user/ccsa14274858/filteredC.small.training', header=True)
 
+# Función para realizar el prepocesamiento de los datos
+#-------------------------------------------------------------------------------
+def prepocesamiento(dataFrame):    
+    print("hello")
+
+# Función para comprobar si el dataframe existe
+#-------------------------------------------------------------------------------
+def existe_DataFrame(sparkContext, fichero):
+    sqlc = SQLContext(sparkContext)
+    if (os.path.exists(fichero) and os.path.isfile(fichero)):
+        df = sqlc.read.csv(fichero, header=True, sep=",", inferSchema=True)
+        print('El fichero ya existe')
+    else:
+        # Generamos el nuevo dataframe
+        print('El fichero no existe. Se crea de nuevo')
+        df = cargarDatos(sc)        
+        df = generarNuevoDF(df)
+    return df
+
+
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 if __name__ == '__main__':
     # Conectamos con Spark    
-    sc = iniciar_Spark()
-    # Cargamos los datos
-    df = cargarDatos(sc)
-    # Generamos el nuevo dataframe
-    generarNuevoDF(df)
+    sc = iniciar_Spark()    
+    # Comprobamos si existe el dataframe y si no existe lo generamos
+    fichero = '/user/ccsa14274858/filteredC.small.training'
+    df = existe_DataFrame(sc, fichero)
 
     sc.stop()
