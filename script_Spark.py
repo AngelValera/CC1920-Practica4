@@ -190,8 +190,8 @@ def clasificador_PerceptronMulticapa(dataFrame, capas, NumIter, TamLote):
     evaluator = BinaryClassificationEvaluator(rawPredictionCol='prediction')
     evaluation = evaluator.evaluate(model.transform(testData))
     print('AUC:', evaluation)
-    print('Perceptron Multicapa: maxIter:' + NumIter +
-          ' Layers: '+layers+' blockSize: '+TamLote)
+    print('Perceptron Multicapa: maxIter:' + str(NumIter) +
+          ' Layers: '+str(layers)+' blockSize: '+str(TamLote))
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
