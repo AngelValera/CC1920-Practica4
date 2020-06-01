@@ -72,12 +72,13 @@ def prepocesamiento(dataFrame, undersampling):
     dataFrame = dataFrame.select('features', 'label')    
     
     # Balanceamos de los datos utilizando Undersampling    
-    if undersampling:
+    if not undersampling:
         df_No = dataFrame.filter('label=0')
         df_Si = dataFrame.filter('label=1')
         sampleRatio = float(df_Si.count()) / float(dataFrame.count())
         seleccion = df_No.sample(False, sampleRatio)
         dataFrame = df_Si.unionAll(seleccion)
+    return dataFrame
 
 # Función para clasificar usando RandomForest 
 #-------------------------------------------------------------------------------
@@ -232,10 +233,10 @@ if __name__ == '__main__':
     # Una capa de entrada de 6 (features),
     # Una capa intermedia de 48
     # y una capa de salida de 2 (classes)
-    #capas = [6, 48, 2]
-    #clasificador_PerceptronMulticapa(df, capas, 100, 128)
-    #clasificador_PerceptronMulticapa(df, capas, 50, 64)
-    #clasificador_PerceptronMulticapa(df, capas, 25, 32)
+    capas = [6, 48, 2]
+    clasificador_PerceptronMulticapa(df, capas, 100, 128)
+    clasificador_PerceptronMulticapa(df, capas, 50, 64)
+    clasificador_PerceptronMulticapa(df, capas, 25, 32)
 
 
 
