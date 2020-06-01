@@ -180,7 +180,7 @@ if __name__ == '__main__':
     df = prepocesamiento(df)    
     
     # Realizamos una clasificación usando RandomForest         
-    clasificador_RandomForest(df, 10)
+    #clasificador_RandomForest(df, 10)
     #clasificador_RandomForest(df, 75)
     #clasificador_RandomForest(df, 150)
     
