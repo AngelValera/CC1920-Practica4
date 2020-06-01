@@ -47,7 +47,7 @@ def generarNuevoDF(dataFrame):
     new_DF = dataFrame.select(columnasAsignadas)
     # Generamos un nuevo csv
     new_DF.write.csv(
-        '/user/ccsa14274858/filteredC.small.training', header=True)
+        '/user/ccsa14274858/filteredC.small.training', header=True, mode="overwrite")
 
 # Función para realizar el prepocesamiento de los datos
 #-------------------------------------------------------------------------------
@@ -58,7 +58,7 @@ def prepocesamiento(dataFrame):
 #-------------------------------------------------------------------------------
 def existe_DataFrame(sparkContext, fichero):
     sqlc = SQLContext(sparkContext)
-    if (os.path.exists(fichero) and os.path.isfile(fichero)):
+    if (os.path.exists(fichero)):
         df = sqlc.read.csv(fichero, header=True, sep=",", inferSchema=True)
         print('El fichero ya existe')
     else:
