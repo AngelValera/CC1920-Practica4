@@ -141,7 +141,7 @@ def clasificador_DecisionTree(dataFrame):
     # Hacer predicciones
     predictions = model.transform(testData)
     # Seleccione filas de ejemplo para mostrar.
-    predictions.select('predictedLabel', 'label', 'features').show(5)
+    predictions.select('prediction', 'indexedLabel', 'features').show(5)
     # Seleccionamos (prediction, true label) y calculamos el test error
     evaluator = MulticlassClassificationEvaluator(
         labelCol='indexedLabel', predictionCol='prediction', metricName='accuracy')
