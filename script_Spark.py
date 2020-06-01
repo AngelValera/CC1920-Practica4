@@ -3,31 +3,58 @@
 # Autor: Ángel Valera Motos
 ###################################################################################################
 import sys
-
-from pyspark import SparkContext, SparkConf
+from pyspark import SparkContext, SparkConf, SQLContext
 
 # Función para conectar con el cluster de Spark
 #-------------------------------------------------------------------------------
 def iniciar_Spark():
     """ Inicializa el Spark Context """
-    conf = SparkConf().setAppName("Practica 4 - Ángel Valera Motos")
+    conf = SparkConf().setAppName("Practica 4 - Angel Valera Motos")
     sc = SparkContext(conf=conf)
     sc.setLogLevel('WARN')
     return sc
 
-# Función para cargar el fichero de datos y seleccionar solo las 6 columnas designadas
+# Función para cargar el fichero de datos y asignarle la cabecera
 #-------------------------------------------------------------------------------
-def seleccionarColumnas(sparkContext):
-    # Primero debemos leer el fichero con las cabeceras
+def cargarDatos(sparkContext):
+    # Leemos el fichero con las cabeceras
     cabeceras = sparkContext.textFile(
         "/user/datasets/ecbdl14/ECBDL14_IR2.header").collect()
+    # Extraemos las cabeceras
     cabeceras = list(filter(lambda x: "@inputs" in x, cabeceras))[0]
-    cabeceras = cabeceras.replace(",", "").strip().split()  # Eliminamos el
-    del cabeceras[0]                                      # Borrar "@input"
-    cabeceras.append("class")
-    
+    # Limpiamos las cebeceras 
+    cabeceras = cabeceras.replace(",", "").strip().split()
+    # Eliminamos la primera columna que contiene "@input"
+    del cabeceras[0]                             
+    # Añadimos la columna "class"     
+    cabeceras.append("class")       
+    # Extraemos los datos
+    sqlc = SQLContext(sparkContext)
+    dataFrame = sqlc.read.csv(
+        "/user/datasets/ecbdl14/ECBDL14_IR2.data", header=False, inferSchema=True)
+    # Asignamos la cabecera su columna correspondiente    
+    for i, nombreColumna in enumerate(dataFrame.columns):
+        dataFrame = dataFrame.withColumnRenamed(nombreColumna, cabeceras[i])
+    return dataFrame
 
+# Función para generar un nuevo conjunto de datos con las columnas asignadas
+#-------------------------------------------------------------------------------
+def generarNuevoDF(dataFrame):
+    # Columnas asignadas
+    columnasAsignadas = ["PSSM_r2_-1_M", "PSSM_r1_3_K", "AA_freq_global_D",
+                         "PSSM_central_0_V", "AA_freq_central_D", "PSSM_r1_-1_A", "class"]
+    # Seleccionamos las columnas asignadas
+    new_DF = dataFrame.select(columnasAsignadas)
+    # Generamos un nuevo csv
+    new_DF.write.csv(
+        '/user/ccsa14274858/filteredC.small.training', header=True)
 
 if __name__ == '__main__':
+    # Conectamos con Spark    
     sc = iniciar_Spark()
-    
+    # Cargamos los datos
+    df = cargarDatos(sc)
+    # Generamos el nuevo dataframe
+    generarNuevoDF(df)
+
+    sc.stop()
