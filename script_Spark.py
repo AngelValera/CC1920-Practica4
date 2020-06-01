@@ -54,28 +54,13 @@ def generarNuevoDF(dataFrame):
 def prepocesamiento(dataFrame):    
     print("hello")
 
-# Función para comprobar si el dataframe existe
-#-------------------------------------------------------------------------------
-def existe_DataFrame(sparkContext, fichero):
-    sqlc = SQLContext(sparkContext)
-    if (os.path.exists(fichero)):
-        df = sqlc.read.csv(fichero, header=True, sep=",", inferSchema=True)
-        print('El fichero ya existe')
-    else:
-        # Generamos el nuevo dataframe
-        print('El fichero no existe. Se crea de nuevo')
-        df = cargarDatos(sc)        
-        df = generarNuevoDF(df)
-    return df
-
-
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
 if __name__ == '__main__':
     # Conectamos con Spark    
     sc = iniciar_Spark()    
     # Comprobamos si existe el dataframe y si no existe lo generamos
-    fichero = '/user/ccsa14274858/filteredC.small.training'
-    df = existe_DataFrame(sc, fichero)
+    df = cargarDatos(sc)
+    df = generarNuevoDF(df)
 
     sc.stop()
