@@ -67,8 +67,7 @@ def prepocesamiento(dataFrame):
                                            'PSSM_central_0_V', 'AA_freq_central_D', 'PSSM_r1_-1_A'], outputCol='features')
     dataFrame = assembler.transform(dataFrame)
     dataFrame = dataFrame.selectExpr('features as features', 'class as label')
-    dataFrame = dataFrame.select('features', 'label')
-    
+    dataFrame = dataFrame.select('features', 'label')    
     # Balanceamos de los datos utilizando Undersampling    
     df_No = dataFrame.filter('label=0')
     df_Si = dataFrame.filter('label=1')
@@ -150,14 +149,13 @@ def clasificador_DecisionTree(dataFrame):
     print('Test Error = %g' % (1.0 - accuracy))
     print('Accuracy = ', accuracy)
 
-    rfModel = model.stages[2]
-    print(rfModel)  # summary only
+    treeModel = model.stages[2]
+    print(treeModel)  # summary only
 
     #Calcular AUC
     evaluator = BinaryClassificationEvaluator()
     evaluation = evaluator.evaluate(model.transform(testData))
     print('AUC:', evaluation)
-
 
 
 #-------------------------------------------------------------------------------
