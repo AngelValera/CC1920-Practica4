@@ -13,7 +13,7 @@ from pyspark.ml.evaluation import BinaryClassificationEvaluator
 from pyspark.ml import Pipeline
 from pyspark.ml.classification import RandomForestClassifier
 from pyspark.ml.classification import DecisionTreeClassifier
-from pyspark.ml.classification import NaiveBayes
+from pyspark.ml.classification import MultilayerPerceptronClassifier
 from pyspark.ml.feature import MinMaxScaler
 
 # Función para conectar con el cluster de Spark
@@ -166,44 +166,35 @@ def clasificador_DecisionTree(dataFrame):
     evaluation = evaluator.evaluate(model.transform(testData))
     print('AUC:', evaluation)
 
-# Función para clasificar usando NaiveBayes
+# Función para clasificar usando un perceptron multicapa
 #-------------------------------------------------------------------------------
-def clasificador_NaiveBayes(dataFrame,tipoModelo):
-    # Ajustamos todo el conjunto de datos para incluir todas las etiquetas en el índice.
-    labelIndexer = StringIndexer(
-        inputCol='label', outputCol='indexedLabel').fit(dataFrame)
-    # Se identifican automáticamente las características categóricas e indexelas.
-    # Establecemos el maxCategories para que las características con> 4 valores distintos se traten como continuas.
-    featureIndexer =\
-        VectorIndexer(inputCol='features',
-                      outputCol='indexedFeatures', maxCategories=2).fit(dataFrame)
-    # Desglosamos los datos en entrenamiento y test
+def clasificador_PerceptronMulticapa(dataFrame, capas, NumIter, TamLote):
+    # dividimos en conjunto de entrenamiento y de test
     splits = dataFrame.randomSplit([0.7, 0.3], 1234)
     trainData = splits[0]
-    testdata = splits[1]
-    # create the trainer and set its parameters
-    nb = NaiveBayes(smoothing=1.0, modelType=tipoModelo)
-    # train the model
-    model = nb.fit(trainData)
-    # select example rows to display.
-    predictions = model.transform(testdata)
-    # Seleccione filas de ejemplo para mostrar.
-    predictions.select('prediction', 'indexedLabel', 'features').show(5)
+    testData = splits[1]
+
+    # Especificamos las capas para la red neuronal:    
+    layers = capas
+    # Creamos el entrenador de la red y le indicamos sus parámetros
+    trainer = MultilayerPerceptronClassifier(
+        maxIter=NumIter, layers=layers, blockSize=TamLote, seed=1234)
+
+    # Entrenamos el modelo
+    model = trainer.fit(trainData)
     # compute accuracy on the test set
-    evaluator = MulticlassClassificationEvaluator(labelCol="indexedFeatures", predictionCol="prediction",
-                                                metricName="accuracy")
-    accuracy = evaluator.evaluate(predictions)
+    result = model.transform(testData)
+    predictionAndLabels = result.select('prediction', 'label')
+    evaluator = MulticlassClassificationEvaluator(metricName='accuracy')
+    accuracy = evaluator.evaluate(predictionAndLabels)
     print('Test Error = %g ' % (1.0 - accuracy))
     print('Accuracy = ', accuracy)
 
-    NV_Model = model.stages[2]
-    # summary only
-    print(NV_Model)
-
     #Calcular AUC
-    evaluator = BinaryClassificationEvaluator()
-    evaluation = evaluator.evaluate(model.transform(testdata))
+    evaluator = BinaryClassificationEvaluator(rawPredictionCol='prediction')
+    evaluation = evaluator.evaluate(model.transform(testData))
     print('AUC:', evaluation)
+    
 
 
 #-------------------------------------------------------------------------------
@@ -233,10 +224,19 @@ if __name__ == '__main__':
     # Realizamos una clasificación usando DecisionTree
     #clasificador_DecisionTree(df)
 
-    # Realizamos una clasificación usando NaiveBayes
-    clasificador_NaiveBayes(df, "multinomial")
-    #clasificador_NaiveBayes(df, "bernoulli")
-
+    # Realizamos una clasificación usando un perceptron multicapa
+    # Una capa de entrada de 6 (features),
+    # Una capa intermedia de 12
+    # y una capa de salida de 2 (classes)
+    clasificador_PerceptronMulticapa(df, [6, 12, 2], 100, 128)
+    clasificador_PerceptronMulticapa(df, [6, 12, 2], 50, 64)
+    clasificador_PerceptronMulticapa(df, [6, 12, 2], 25, 32)
+    # Una capa de entrada de 6 (features),
+    # Una capa intermedia de 48
+    # y una capa de salida de 2 (classes)
+    clasificador_PerceptronMulticapa(df, [6, 48, 2], 100, 128)
+    clasificador_PerceptronMulticapa(df, [6, 48, 2], 50, 64)
+    clasificador_PerceptronMulticapa(df, [6, 48, 2], 25, 32)
 
 
 
