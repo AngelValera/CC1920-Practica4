@@ -7,7 +7,10 @@ from pyspark import SparkContext, SparkConf, SQLContext
 from pyspark.ml.linalg import Vectors
 from pyspark.ml.feature import VectorAssembler
 from pyspark.ml.feature import IndexToString, StringIndexer, VectorIndexer
-
+from pyspark.ml.evaluation import MulticlassClassificationEvaluator
+from pyspark.ml.evaluation import BinaryClassificationEvaluator
+from pyspark.ml import Pipeline
+from pyspark.ml.classification import RandomForestClassifier
 
 # Función para conectar con el cluster de Spark
 #-------------------------------------------------------------------------------
@@ -69,8 +72,44 @@ def prepocesamiento(dataFrame):
     dataFrame = Si.unionAll(seleccion)
     dataFrame.write.csv(
         '/user/ccsa14274858/filteredC.small.training_Procesado', header=True, mode="overwrite")
-    
-    
+
+# Función para clasificar usando RandomForest 
+#-------------------------------------------------------------------------------
+def clasificador_RandomForest(dataFrame):
+    labelIndexer = StringIndexer(
+        inputCol='label', outputCol='indexedLabel').fit(dataFrame)
+    featureIndexer =\
+        VectorIndexer(inputCol='features',
+                      outputCol='indexedFeatures', maxCategories=2).fit(dataFrame)
+    (trainingData, testData) = dataFrame.randomSplit([0.7, 0.3])
+    rf = RandomForestClassifier(
+        labelCol='indexedLabel', featuresCol='indexedFeatures', numTrees=10)
+    labelConverter = IndexToString(inputCol='prediction', outputCol='predictedLabel',
+                                   labels=labelIndexer.labels)
+    # Chain indexers and forest in a Pipeline
+    pipeline = Pipeline(
+        stages=[labelIndexer, featureIndexer, rf, labelConverter])
+    # Train model.  This also runs the indexers.
+    model = pipeline.fit(trainingData)
+    # Make predictions.
+    predictions = model.transform(testData)
+
+    # Select example rows to display.
+    predictions.select('predictedLabel', 'label', 'features').show(5)
+    # Select (prediction, true label) and compute test error
+    evaluator = MulticlassClassificationEvaluator(
+        labelCol='indexedLabel', predictionCol='prediction', metricName='accuracy')
+    accuracy = evaluator.evaluate(predictions)
+    print('Test Error = %g' % (1.0 - accuracy))
+    print('Accuracy = ', accuracy)
+
+    rfModel = model.stages[2]
+    print(rfModel)  # summary only
+
+    #Calcular AUC
+    evaluator = BinaryClassificationEvaluator()
+    evaluation = evaluator.evaluate(model.transform(testData))
+    print('AUC:', evaluation)
     
     
 
@@ -83,5 +122,7 @@ if __name__ == '__main__':
     df = cargarDatos(sc)
     df = generarNuevoDF(df)
     df = prepocesamiento(df)
+    
+    clasificador_RandomForest(df)
 
     sc.stop()
