@@ -14,6 +14,7 @@ from pyspark.ml import Pipeline
 from pyspark.ml.classification import RandomForestClassifier
 from pyspark.ml.classification import DecisionTreeClassifier
 from pyspark.ml.classification import NaiveBayes
+from pyspark.ml.feature import MinMaxScaler
 
 # Función para conectar con el cluster de Spark
 #-------------------------------------------------------------------------------
@@ -69,12 +70,18 @@ def prepocesamiento(dataFrame):
     dataFrame = assembler.transform(dataFrame)
     dataFrame = dataFrame.selectExpr('features as features', 'class as label')
     dataFrame = dataFrame.select('features', 'label')    
+    
     # Balanceamos de los datos utilizando Undersampling    
     df_No = dataFrame.filter('label=0')
     df_Si = dataFrame.filter('label=1')
     sampleRatio = float(df_Si.count()) / float(dataFrame.count())
     seleccion = df_No.sample(False, sampleRatio)
     dataFrame = df_Si.unionAll(seleccion)
+
+    # Escalamos los datos al rango [0,1]
+    scaler = MinMaxScaler(inputCol="features", outputCol="scaledFeatures")
+    scaler_model = scaler.fit(dataFrame)
+    dataFrame = scaler_model.transform(dataFrame)
     return dataFrame
 
 # Función para clasificar usando RandomForest 
