@@ -229,14 +229,15 @@ if __name__ == '__main__':
     # Una capa intermedia de 12
     # y una capa de salida de 2 (classes)
     clasificador_PerceptronMulticapa(df, [6, 12, 2], 100, 128)
-    clasificador_PerceptronMulticapa(df, [6, 12, 2], 50, 64)
-    clasificador_PerceptronMulticapa(df, [6, 12, 2], 25, 32)
+    #clasificador_PerceptronMulticapa(df, [6, 12, 2], 50, 64)
+    #clasificador_PerceptronMulticapa(df, [6, 12, 2], 25, 32)
+    
     # Una capa de entrada de 6 (features),
     # Una capa intermedia de 48
     # y una capa de salida de 2 (classes)
-    clasificador_PerceptronMulticapa(df, [6, 48, 2], 100, 128)
-    clasificador_PerceptronMulticapa(df, [6, 48, 2], 50, 64)
-    clasificador_PerceptronMulticapa(df, [6, 48, 2], 25, 32)
+    #clasificador_PerceptronMulticapa(df, [6, 48, 2], 100, 128)
+    #clasificador_PerceptronMulticapa(df, [6, 48, 2], 50, 64)
+    #clasificador_PerceptronMulticapa(df, [6, 48, 2], 25, 32)
 
 
 
