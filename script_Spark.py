@@ -13,6 +13,7 @@ from pyspark.ml.evaluation import BinaryClassificationEvaluator
 from pyspark.ml import Pipeline
 from pyspark.ml.classification import RandomForestClassifier
 from pyspark.ml.classification import DecisionTreeClassifier
+from pyspark.ml.classification import NaiveBayes
 
 # Función para conectar con el cluster de Spark
 #-------------------------------------------------------------------------------
@@ -158,6 +159,36 @@ def clasificador_DecisionTree(dataFrame):
     evaluation = evaluator.evaluate(model.transform(testData))
     print('AUC:', evaluation)
 
+# Función para clasificar usando NaiveBayes
+#-------------------------------------------------------------------------------
+def clasificador_NaiveBayes(dataFrame,tipoModelo):
+    # Desglosamos los datos en entrenamiento y test
+    splits = dataFrame.randomSplit([0.6, 0.4], 1234)
+    trainData = splits[0]
+    testdata = splits[1]
+    # create the trainer and set its parameters
+    nb = NaiveBayes(smoothing=1.0, modelType=tipoModelo)
+    # train the model
+    model = nb.fit(trainData)
+    # select example rows to display.
+    predictions = model.transform(testdata)
+    predictions.show()
+    # compute accuracy on the test set
+    evaluator = MulticlassClassificationEvaluator(labelCol="label", predictionCol="prediction",
+                                                metricName="accuracy")
+    accuracy = evaluator.evaluate(predictions)
+    print('Test Error = %g ' % (1.0 - accuracy))
+    print('Accuracy = ', accuracy)
+
+    NV_Model = model.stages[2]
+    # summary only
+    print(NV_Model)
+
+    #Calcular AUC
+    evaluator = BinaryClassificationEvaluator()
+    evaluation = evaluator.evaluate(model.transform(testdata))
+    print('AUC:', evaluation)
+
 
 #-------------------------------------------------------------------------------
 #-------------------------------------------------------------------------------
@@ -184,7 +215,12 @@ if __name__ == '__main__':
     #clasificador_RandomForest(df, 150)
     
     # Realizamos una clasificación usando DecisionTree
-    clasificador_DecisionTree(df)
+    #clasificador_DecisionTree(df)
+
+    # Realizamos una clasificación usando NaiveBayes
+    clasificador_NaiveBayes(df, "multinomial")
+    #clasificador_NaiveBayes(df, "bernoulli")
+
 
 
 
