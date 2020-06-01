@@ -54,7 +54,8 @@ def generarNuevoDF(dataFrame):
     # Generamos un nuevo csv
     new_DF.write.csv(
         '/user/ccsa14274858/filteredC.small.training', header=True, mode="overwrite")
-
+    return new_DF 
+    
 # Función para realizar el prepocesamiento de los datos
 #-------------------------------------------------------------------------------
 def prepocesamiento(dataFrame):    
