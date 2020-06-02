@@ -72,7 +72,7 @@ def prepocesamiento(dataFrame, undersampling):
     dataFrame = dataFrame.select('features', 'label')    
     
     # Balanceamos de los datos utilizando Undersampling    
-    if not undersampling:
+    if undersampling:
         df_No = dataFrame.filter('label=0')
         df_Si = dataFrame.filter('label=1')
         sampleRatio = float(df_Si.count()) / float(dataFrame.count())
